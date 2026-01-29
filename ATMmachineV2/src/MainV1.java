@@ -1,0 +1,151 @@
+import core.ATMMachine;           // V1 ATM for customers
+import core.ATMMachineV2;         // V2 ATM for technician
+import services.FileATMStateService;
+import interfaces.IATMStateService;
+import services.PrinterService;
+import users.TechnicianV2Panel;
+import model.Account;
+
+import java.util.Scanner;
+
+public class MainV1 {
+
+    public static void main(String[] args) {
+
+        Scanner sc = new Scanner(System.in);
+
+        // --- V1 ATM for customers ---
+        ATMMachine atmV1 = new ATMMachine();
+
+        // --- V2 ATM for technician ---
+        IATMStateService stateService = new FileATMStateService();
+        PrinterService printerService = new PrinterService(100);
+        ATMMachineV2 atmV2 = new ATMMachineV2(stateService, printerService);
+
+        while (true) {
+            System.out.println("\n--- ATM HOME SCREEN ---");
+            System.out.println("1. Customer Login");
+            System.out.println("2. Technician Login");
+            System.out.println("3. Exit");
+            System.out.print("Select: ");
+
+            String choiceInput = sc.nextLine();
+            int choice;
+
+            try {
+                choice = Integer.parseInt(choiceInput);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Only integers are allowed.");
+                continue;
+            }
+
+            if (choice == 1) {
+                System.out.print("Name: ");
+                String name = sc.nextLine();
+
+                System.out.print("PIN: ");
+                String pin = sc.nextLine();
+
+                Account user = atmV1.authenticateUser(name, pin);
+                if (user != null) {
+                    userMenu(atmV1, sc, user); // V1 customer menu
+                }
+
+            } else if (choice == 2) {
+                System.out.print("ID: ");
+                String id = sc.nextLine();
+
+                System.out.print("Pass: ");
+                String pass = sc.nextLine();
+
+                if (atmV1.authenticateTech(id, pass)) {
+                    // Launch the V2 technician panel using atmV2
+                    TechnicianV2Panel techPanel = new TechnicianV2Panel(atmV2, sc);
+                    techPanel.showMenu();
+                } else {
+                    System.out.println("Denied.");
+                }
+
+            } else if (choice == 3) {
+                System.out.println("Goodbye!");
+                break;
+            } else {
+                System.out.println("Invalid option.");
+            }
+        }
+
+        sc.close();
+    }
+
+    // ---------------- USER MENU ----------------
+    private static void userMenu(ATMMachine atm, Scanner sc, Account user) {
+        boolean loggedIn = true;
+
+        while (loggedIn) {
+            System.out.println("\n--- USER MENU (" + user.getOwner() + ") ---");
+            System.out.println("1. Check Balance");
+            System.out.println("2. Deposit");
+            System.out.println("3. Withdraw");
+            System.out.println("4. Logout");
+            System.out.print("Action: ");
+
+            String actionInput = sc.nextLine();
+            int act;
+
+            try {
+                act = Integer.parseInt(actionInput);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Only integers are allowed.");
+                continue;
+            }
+
+            switch (act) {
+                case 1 -> System.out.println("Balance: $" + atm.checkBalance(user.getOwner()));
+
+                case 2 -> {
+                    System.out.print("Deposit amount: ");
+                    String depInput = sc.nextLine();
+                    int amount;
+
+                    try {
+                        amount = Integer.parseInt(depInput);
+                        if (amount <= 0) {
+                            System.out.println("Deposit must be a positive integer.");
+                            break;
+                        }
+                        atm.deposit(user.getOwner(), amount);
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid input. Only integers are allowed.");
+                    }
+                }
+
+                case 3 -> {
+                    System.out.print("Withdraw amount: ");
+                    String withInput = sc.nextLine();
+                    int amt;
+
+                    try {
+                        amt = Integer.parseInt(withInput);
+                        if (amt <= 0) {
+                            System.out.println("Withdrawal must be a positive integer.");
+                            break;
+                        }
+
+                        if (!atm.withdraw(user.getOwner(), amt)) {
+                            System.out.println("Insufficient funds.");
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid input. Only integers are allowed.");
+                    }
+                }
+
+                case 4 -> {
+                    atm.logout();
+                    loggedIn = false;
+                }
+
+                default -> System.out.println("Invalid option.");
+            }
+        }
+    }
+}
