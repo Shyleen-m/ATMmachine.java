@@ -57,7 +57,7 @@ public class ATMMachine implements ICustomerActions, ITechActions {
         return accounts.stream().filter(a -> a.getOwner().equalsIgnoreCase(name)).findFirst().get().getBalance();
     }
 
-    @Override public void deposit(String name, double amount) {
+    @Override public void deposit(String name, int amount) {
         Account a = accounts.stream().filter(acc -> acc.getOwner().equalsIgnoreCase(name)).findFirst().get();
         a.setBalance(a.getBalance() + amount);
         internalCash += amount;
@@ -65,7 +65,7 @@ public class ATMMachine implements ICustomerActions, ITechActions {
         System.out.println("Successfully deposited $" + amount);
     }
 
-    @Override public boolean withdraw(String name, double amount) {
+    @Override public boolean withdraw(String name, int amount) {
         Account a = accounts.stream().filter(acc -> acc.getOwner().equalsIgnoreCase(name)).findFirst().get();
         if (a.getBalance() >= amount && internalCash >= amount) {
             a.setBalance(a.getBalance() - amount);
