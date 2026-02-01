@@ -1,8 +1,14 @@
-package interfaces;  // must match folder
+package interfaces;
+
+import model.Account;
+import java.util.List;
 
 public interface IATMStateService {
-    int loadCash();
-    int loadPaper();
-    String loadFirmware();
-    void saveState(int cash, int paper, String firmware);
+    void saveState(List<Account> accounts, double cash, int paper, int ink, String firmware);
+
+    List<Account> loadAccounts();
+    int loadPaperLevel();
+    int loadInkLevel();
+    double loadCashLevel();
+    String loadFirmwareVersion();
 }

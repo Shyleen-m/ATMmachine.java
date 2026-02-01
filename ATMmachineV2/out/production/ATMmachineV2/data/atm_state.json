@@ -1,9 +1,9 @@
 {
-  "cash": 5001.0,
-  "paper": 10,
+  "cash": 1000.0,
+  "paper": 1,
+  "ink": 1,
   "accounts": [
-    {"owner":"Alice", "pin":"1234", "balance":1000.00},
-    {"owner":"Bob", "pin":"5555", "balance":500.00},
-    {"owner":"ngaa", "pin":"2006", "balance":1.00}
+    {"owner":"Charlie", "pin":"0000", "balance":50.00, "transactions":[]},
+    {"owner":"Dana", "pin":"1111", "balance":0.00, "transactions":[]}
   ]
 }
