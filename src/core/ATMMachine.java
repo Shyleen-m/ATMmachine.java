@@ -123,9 +123,6 @@ public class ATMMachine implements ICustomerActions, ITechActions {
         printer.usePaper();
         printer.useInk();
         System.out.println("[*] Receipt printed.");
-        if (printer.getPaperLevel() <= 3) System.out.println("[!] Warning: Low paper.");
-        if (printer.getInkLevel() <= 3) System.out.println("[!] Warning: Low ink.");
-
         persistence.saveState(accounts, internalCash, printer.getPaperLevel(), printer.getInkLevel());
     }
 

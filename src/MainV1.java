@@ -1,11 +1,11 @@
-import core.ATMMachine;
+import core.ATMMachine; // version 1
 import model.Account;
 import java.util.Scanner;
 
 public class MainV1 {
 
     public static void main(String[] args) {
-        ATMMachine atm = new ATMMachine();
+        ATMMachine atm = new ATMMachine(); // use v1 class
         Scanner sc = new Scanner(System.in);
 
         while (true) {
@@ -21,8 +21,9 @@ public class MainV1 {
 
             switch (choice) {
                 case 1 -> {
+                    // Immediately block login if ATM is out of service
                     if (atm.isOutOfService()) {
-                        System.out.println("[!] ATM out of service.");
+                        System.out.println("[!] ATM out of service. Cannot login.");
                         continue;
                     }
                     System.out.print("Name: ");
@@ -50,6 +51,13 @@ public class MainV1 {
         boolean loggedIn = true;
 
         while (loggedIn) {
+            // Block any action immediately if ATM out of service mid-session
+            if (atm.isOutOfService()) {
+                System.out.println("[!] ATM out of service. Logging out...");
+                atm.logout();
+                return;
+            }
+
             System.out.println("\n--- USER MENU (" + user.getOwner() + ") ---");
             System.out.println("1. Check Balance");
             System.out.println("2. Deposit");
@@ -78,14 +86,19 @@ public class MainV1 {
 
     // ---------------- DEPOSIT ----------------
     private static void depositMenu(ATMMachine atm, Scanner sc, Account user) {
-        if (!atm.checkPaperInkWarning(sc)) return;
+        if (!atm.checkPaperInkWarning(sc)) {
+            System.out.println("[!] Transaction cancelled due to low paper/ink.");
+            atm.logout();
+            return;
+        }
 
         System.out.print("Enter total deposit (€): ");
         int amount;
         try {
             amount = Integer.parseInt(sc.nextLine());
             if (amount <= 0 || amount % 5 != 0) {
-                System.out.println("Must be positive and multiple of €5."); return;
+                System.out.println("Must be positive and multiple of €5.");
+                return;
             }
         } catch (Exception e) { System.out.println("Invalid input."); return; }
 
@@ -98,14 +111,19 @@ public class MainV1 {
 
     // ---------------- WITHDRAW ----------------
     private static void withdrawMenu(ATMMachine atm, Scanner sc, Account user) {
-        if (!atm.checkPaperInkWarning(sc)) return;
+        if (!atm.checkPaperInkWarning(sc)) {
+            System.out.println("[!] Transaction cancelled due to low paper/ink.");
+            atm.logout();
+            return;
+        }
 
         System.out.print("Enter total withdrawal (€): ");
         int amount;
         try {
             amount = Integer.parseInt(sc.nextLine());
             if (amount <= 0 || amount % 5 != 0) {
-                System.out.println("Must be positive and multiple of €5."); return;
+                System.out.println("Must be positive and multiple of €5.");
+                return;
             }
         } catch (Exception e) { System.out.println("Invalid input."); return; }
 
@@ -114,6 +132,7 @@ public class MainV1 {
         if (!atm.withdraw(user.getOwner(), amount)) return;
         user.addTransaction("Withdraw", amount);
         atm.printReceipt();
+        System.out.println("Please collect your cash!"); // Added message after withdrawal
     }
 
     // ---------------- NOTE SELECTION ----------------
@@ -124,19 +143,32 @@ public class MainV1 {
 
         while (total < amount) {
             System.out.println("\nCurrent total: €" + total + " / €" + amount);
-            System.out.println("Select note to add:");
-            System.out.println("1. €100  2. €50  3. €20  4. €10  5. €5  0. Cancel");
+            System.out.println("Select note to add (vertical list):");
+            System.out.println("1. €100");
+            System.out.println("2. €50");
+            System.out.println("3. €20");
+            System.out.println("4. €10");
+            System.out.println("5. €5");
+            System.out.println("0. Cancel");
             System.out.print("Choice: ");
 
             int choice;
-            try { choice = Integer.parseInt(sc.nextLine()); } catch (Exception e) { System.out.println("Invalid."); continue; }
-            if (choice == 0) { System.out.println("Transaction cancelled."); return false; }
+            try { choice = Integer.parseInt(sc.nextLine()); }
+            catch (Exception e) { System.out.println("Invalid."); continue; }
+
+            if (choice == 0) {
+                System.out.println("Transaction cancelled.");
+                return false;
+            }
             if (choice < 1 || choice > 5) { System.out.println("Invalid choice."); continue; }
 
             int noteValue = notes[choice - 1];
             int remaining = amount - total;
             int maxNotes = remaining / noteValue;
-            if (maxNotes == 0) { System.out.println("Cannot use this note. Remaining €" + remaining); continue; }
+            if (maxNotes == 0) {
+                System.out.println("Cannot use this note. Remaining €" + remaining);
+                continue;
+            }
 
             System.out.print("How many €" + noteValue + " notes? (Max " + maxNotes + "): ");
             int count;
@@ -145,7 +177,10 @@ public class MainV1 {
 
             total += count * noteValue;
             System.out.println("Added " + count + " x €" + noteValue + " notes.");
-            if (total == amount) { System.out.println("Desired amount reached!"); break; }
+            if (total == amount) {
+                System.out.println("Desired amount reached.");
+                break;
+            }
         }
         return true;
     }
