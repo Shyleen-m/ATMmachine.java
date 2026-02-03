@@ -25,7 +25,7 @@ class ATMUserFlowTest {
 
         IATMStateService stateService = new IATMStateService() {
             @Override
-            public List<Account> loadAccounts() { return persistence.loadAccounts(); }
+            public List<Account> loadAccounts() { return persistence.loadAccounts();}
             @Override
             public double loadCashLevel() { return 1000; }
             @Override
