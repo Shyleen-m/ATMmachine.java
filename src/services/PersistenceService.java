@@ -49,7 +49,6 @@ public class PersistenceService {
             for (String line : lines) content.append(line);
             String data = content.toString();
 
-            // Extract accounts array
             int start = data.indexOf("[");
             int end = data.lastIndexOf("]");
             if (start < 0 || end < 0) throw new Exception("Invalid file");
@@ -108,7 +107,7 @@ public class PersistenceService {
                 if (line.contains("\"paper\"")) return Integer.parseInt(line.split(":")[1].replace(",", "").trim());
             }
         } catch (Exception e) {}
-        return 10;
+        return 3;
     }
 
     // ---------------- LOAD INK ----------------
@@ -119,6 +118,19 @@ public class PersistenceService {
                 if (line.contains("\"ink\"")) return Integer.parseInt(line.split(":")[1].replace(",", "").trim());
             }
         } catch (Exception e) {}
-        return 10;
+        return 3;
+    }
+
+    // ---------------- LOAD CASH ----------------
+    public double loadCashLevel() {
+        try {
+            List<String> lines = Files.readAllLines(Paths.get(PATH));
+            for (String line : lines) {
+                if (line.contains("\"cash\"")) {
+                    return Double.parseDouble(line.split(":")[1].replace(",", "").trim());
+                }
+            }
+        } catch (Exception e) {}
+        return 5000.0; // default ATM cash
     }
 }
