@@ -1,9 +1,10 @@
 {
-  "cash": 5050.0,
-  "paper": 1,
-  "ink": 1,
+  "cash": 5000.0,
+  "paper": 3,
+  "ink": 3,
   "accounts": [
-    {"owner":"ngaa", "pin":"2006", "balance":150.00, "transactions":[]},
-    {"owner":"Charlie", "pin":"1111", "balance":0.00, "transactions":["2026-02-03 03:49:52 | Withdraw: €60.00 | Balance: €40.00"]}
+    {"owner":"ngaa", "pin":"2006", "balance":100.00, "transactions":[]},
+    {"owner":"Bob", "pin":"5555", "balance":50.00, "transactions":["2026-02-03 03:49:52 | Withdraw: €60.00 | Balance: €40.00"]},
+    {"owner":"Charlie", "pin":"1111", "balance":0.00, "transactions":[]}
   ]
 }
