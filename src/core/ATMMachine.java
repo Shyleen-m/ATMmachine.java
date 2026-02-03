@@ -13,15 +13,12 @@ public class ATMMachine implements ICustomerActions, ITechActions {
     private PrinterService printer;
     private PersistenceService persistence = new PersistenceService();
     private boolean isSessionActive = false;
-    private final String firmwareVersion = "1.1.1"; // Default firmware
+    private final String firmwareVersion = "1.1.1";
 
     public ATMMachine() {
-        // Load accounts
         this.accounts = persistence.loadAccounts();
-
-        // Load paper and ink from persistence (simplified defaults if not saved)
-        int savedPaper = persistence.loadPaperLevel(); // implement in PersistenceService
-        int savedInk = persistence.loadInkLevel();     // implement in PersistenceService
+        int savedPaper = persistence.loadPaperLevel();
+        int savedInk = persistence.loadInkLevel();
 
         if (savedPaper <= 0) savedPaper = 3;
         if (savedInk <= 0) savedInk = 3;
@@ -29,7 +26,6 @@ public class ATMMachine implements ICustomerActions, ITechActions {
         this.printer = new PrinterService(savedPaper, savedInk);
     }
 
-    // -------------------- CUSTOMER --------------------
     public Account authenticateUser(String name, String pin) {
         if (isOutOfService()) {
             System.out.println("[!] ATM out of service. Please try later.");
@@ -55,7 +51,6 @@ public class ATMMachine implements ICustomerActions, ITechActions {
             }
         }
 
-        // Auto-register new user
         Account newUser = new Account(name, pin, 0.0);
         accounts.add(newUser);
         persistence.saveState(accounts, internalCash, printer.getPaperLevel(), printer.getInkLevel());
@@ -68,11 +63,20 @@ public class ATMMachine implements ICustomerActions, ITechActions {
         return printer.getPaperLevel() <= 0 || printer.getInkLevel() <= 0;
     }
 
+    // UPDATED: Added input validation loop
     public boolean checkPaperInkWarning(java.util.Scanner sc) {
-        if (printer.getPaperLevel() <= 3 || printer.getInkLevel() <= 3) {
-            System.out.println("[!] Low paper/ink. Continue transaction? (y/n)");
-            String resp = sc.nextLine();
-            return resp.equalsIgnoreCase("y");
+        if ((printer.getPaperLevel() <= 3 && printer.getPaperLevel() > 0) ||
+                (printer.getInkLevel() <= 3 && printer.getInkLevel() > 0)) {
+
+            while (true) {
+                System.out.println("[!] Low paper/ink. Continue transaction? (y/n)");
+                String resp = sc.nextLine().trim().toLowerCase();
+
+                if (resp.equals("y")) return true;
+                if (resp.equals("n")) return false;
+
+                System.out.println("[!] Invalid input. Please enter 'y' or 'n'.");
+            }
         }
         return true;
     }
@@ -93,6 +97,7 @@ public class ATMMachine implements ICustomerActions, ITechActions {
         }
     }
 
+    // UPDATED: Removed redundant print calls and messages
     public boolean withdraw(String name, int amount) {
         Optional<Account> acc = accounts.stream().filter(a -> a.getOwner().equalsIgnoreCase(name)).findFirst();
         if (acc.isPresent()) {
@@ -101,7 +106,10 @@ public class ATMMachine implements ICustomerActions, ITechActions {
                 a.setBalance(a.getBalance() - amount);
                 internalCash -= amount;
                 persistence.saveState(accounts, internalCash, printer.getPaperLevel(), printer.getInkLevel());
-                printReceipt();
+
+                if (isOutOfService()) {
+                    System.out.println("[!] ATM out of service due to paper/ink.");
+                }
                 return true;
             } else {
                 System.out.println("[!] Insufficient funds or ATM cash.");
@@ -110,25 +118,25 @@ public class ATMMachine implements ICustomerActions, ITechActions {
         return false;
     }
 
-    public void printReceipt() {
-        if (!printer.hasPaper()) {
-            System.out.println("[!] Printer empty. Cannot print receipt.");
-            return;
+    // UPDATED: Removed repetitive warning spam
+    private void printReceiptOnce() {
+        if (printer.hasPaper() && printer.hasInk()) {
+            printer.usePaper();
+            printer.useInk();
+            System.out.println("[*] Receipt printed.");
+        } else {
+            if (!printer.hasPaper()) System.out.println("[!] Printer empty. Cannot print receipt.");
+            if (!printer.hasInk()) System.out.println("[!] Printer out of ink. Cannot print receipt.");
         }
-        if (!printer.hasInk()) {
-            System.out.println("[!] Printer out of ink. Cannot print receipt.");
-            return;
-        }
+    }
 
-        printer.usePaper();
-        printer.useInk();
-        System.out.println("[*] Receipt printed.");
-        persistence.saveState(accounts, internalCash, printer.getPaperLevel(), printer.getInkLevel());
+    @Override
+    public void printReceipt() {
+        printReceiptOnce();
     }
 
     public void logout() { isSessionActive = false; }
 
-    // -------------------- TECHNICIAN --------------------
     public boolean authenticateTech(String id, String pass) {
         return id.equals("TECH1") && pass.equals("123");
     }

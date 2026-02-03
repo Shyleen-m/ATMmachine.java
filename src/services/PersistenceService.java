@@ -1,7 +1,7 @@
 package services;
 
 import model.Account;
-import java.io.*;
+import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 
@@ -12,18 +12,9 @@ public class PersistenceService {
 
     // ---------------- SAVE STATE ----------------
     public void saveState(List<Account> accounts, double cash, int paper, int ink) {
-        // Ensure "ngaa" exists and is first in list
-        Account ngaaAcc = null;
-        for (Account a : accounts) {
-            if (a.getOwner().equals(PROTECTED_ACCOUNT)) {
-                ngaaAcc = a;
-                break;
-            }
-        }
-        if (ngaaAcc == null) {
-            ngaaAcc = new Account("ngaa", "2006", 100.0);
-            accounts.add(0, ngaaAcc);
-        }
+        // Ensure "ngaa" exists
+        boolean hasNgaa = accounts.stream().anyMatch(a -> a.getOwner().equals(PROTECTED_ACCOUNT));
+        if (!hasNgaa) accounts.add(0, new Account("ngaa", "2006", 100.0));
 
         StringBuilder sb = new StringBuilder();
         sb.append("{\n");
@@ -56,10 +47,9 @@ public class PersistenceService {
             List<String> lines = Files.readAllLines(Paths.get(PATH));
             StringBuilder content = new StringBuilder();
             for (String line : lines) content.append(line);
-
             String data = content.toString();
 
-            // Extract "accounts":[...] block
+            // Extract accounts array
             int start = data.indexOf("[");
             int end = data.lastIndexOf("]");
             if (start < 0 || end < 0) throw new Exception("Invalid file");
@@ -80,7 +70,6 @@ public class PersistenceService {
                     if (p.startsWith("\"pin\"")) pin = p.split(":")[1].replace("\"", "").trim();
                     if (p.startsWith("\"balance\"")) balance = Double.parseDouble(p.split(":")[1].trim());
                     if (p.startsWith("\"transactions\"")) {
-                        // Parse transaction array
                         int tStart = p.indexOf("[");
                         int tEnd = p.indexOf("]");
                         if (tStart >= 0 && tEnd >= 0) {
@@ -94,18 +83,17 @@ public class PersistenceService {
                 }
 
                 Account acc = new Account(owner, pin, balance);
-                for (String t : transactions) acc.getTransactions().add(t); // Restore transactions
+                acc.getTransactions().addAll(transactions);
                 list.add(acc);
             }
-
         } catch (Exception e) {
-            // Default accounts if file missing or invalid
-            list.add(new Account("ngaa", "2006", 100.0)); // protected account
+            // File missing or corrupted: create default accounts including protected one
+            list.add(new Account("ngaa", "2006", 100.0));
             list.add(new Account("Alice", "1234", 1000.0));
             list.add(new Account("Bob", "5555", 500.0));
         }
 
-        // Ensure ngaa always exists
+        // Ensure "ngaa" exists
         boolean hasNgaa = list.stream().anyMatch(a -> a.getOwner().equals(PROTECTED_ACCOUNT));
         if (!hasNgaa) list.add(0, new Account("ngaa", "2006", 100.0));
 
@@ -117,12 +105,10 @@ public class PersistenceService {
         try {
             List<String> lines = Files.readAllLines(Paths.get(PATH));
             for (String line : lines) {
-                if (line.contains("\"paper\"")) {
-                    return Integer.parseInt(line.split(":")[1].replace(",", "").trim());
-                }
+                if (line.contains("\"paper\"")) return Integer.parseInt(line.split(":")[1].replace(",", "").trim());
             }
-        } catch (Exception e) { }
-        return 10; // default
+        } catch (Exception e) {}
+        return 10;
     }
 
     // ---------------- LOAD INK ----------------
@@ -130,11 +116,9 @@ public class PersistenceService {
         try {
             List<String> lines = Files.readAllLines(Paths.get(PATH));
             for (String line : lines) {
-                if (line.contains("\"ink\"")) {
-                    return Integer.parseInt(line.split(":")[1].replace(",", "").trim());
-                }
+                if (line.contains("\"ink\"")) return Integer.parseInt(line.split(":")[1].replace(",", "").trim());
             }
-        } catch (Exception e) { }
-        return 10; // default
+        } catch (Exception e) {}
+        return 10;
     }
 }

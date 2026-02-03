@@ -1,11 +1,11 @@
-import core.ATMMachine; // version 1
+import core.ATMMachine;
 import model.Account;
 import java.util.Scanner;
 
 public class MainV1 {
 
     public static void main(String[] args) {
-        ATMMachine atm = new ATMMachine(); // use v1 class
+        ATMMachine atm = new ATMMachine();
         Scanner sc = new Scanner(System.in);
 
         while (true) {
@@ -21,7 +21,6 @@ public class MainV1 {
 
             switch (choice) {
                 case 1 -> {
-                    // Immediately block login if ATM is out of service
                     if (atm.isOutOfService()) {
                         System.out.println("[!] ATM out of service. Cannot login.");
                         continue;
@@ -49,11 +48,9 @@ public class MainV1 {
 
     private static void userMenu(ATMMachine atm, Scanner sc, Account user) {
         boolean loggedIn = true;
-
         while (loggedIn) {
-            // Block any action immediately if ATM out of service mid-session
             if (atm.isOutOfService()) {
-                System.out.println("[!] ATM out of service. Logging out...");
+                System.out.println("[!] ATM out of service now . Logging out...");
                 atm.logout();
                 return;
             }
@@ -84,11 +81,9 @@ public class MainV1 {
         }
     }
 
-    // ---------------- DEPOSIT ----------------
     private static void depositMenu(ATMMachine atm, Scanner sc, Account user) {
         if (!atm.checkPaperInkWarning(sc)) {
             System.out.println("[!] Transaction cancelled due to low paper/ink.");
-            atm.logout();
             return;
         }
 
@@ -109,11 +104,9 @@ public class MainV1 {
         atm.printReceipt();
     }
 
-    // ---------------- WITHDRAW ----------------
     private static void withdrawMenu(ATMMachine atm, Scanner sc, Account user) {
         if (!atm.checkPaperInkWarning(sc)) {
             System.out.println("[!] Transaction cancelled due to low paper/ink.");
-            atm.logout();
             return;
         }
 
@@ -130,12 +123,12 @@ public class MainV1 {
         if (!selectNotesMenu(sc, amount)) return;
 
         if (!atm.withdraw(user.getOwner(), amount)) return;
+
         user.addTransaction("Withdraw", amount);
+        System.out.println("Please collect your cash!");
         atm.printReceipt();
-        System.out.println("Please collect your cash!"); // Added message after withdrawal
     }
 
-    // ---------------- NOTE SELECTION ----------------
     private static boolean selectNotesMenu(Scanner sc, int amount) {
         int[] notes = {100, 50, 20, 10, 5};
         int total = 0;

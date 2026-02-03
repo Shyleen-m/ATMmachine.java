@@ -1,5 +1,7 @@
 package model;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,13 +24,17 @@ public class Account {
     public void setBalance(double balance) { this.balance = balance; }
 
     public List<String> getTransactions() { return transactions; }
+
+    // Add a transaction with timestamp + current balance
     public void addTransaction(String type, double amount) {
-        String entry = type + ": €" + String.format("%.2f", amount);
+        LocalDateTime now = LocalDateTime.now();
+        String timestamp = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String entry = timestamp + " | " + type + ": €" + String.format("%.2f", amount)
+                + " | Balance: €" + String.format("%.2f", this.balance);
         transactions.add(entry);
     }
 
-    // ------------------- SERIALIZE -------------------
-    // Basic JSON for saving accounts + transactions
+    // Serialize account with transactions for saving
     public String toJsonWithTransactions() {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
@@ -37,7 +43,7 @@ public class Account {
         sb.append("\"balance\":").append(String.format("%.2f", balance)).append(", ");
         sb.append("\"transactions\":[");
         for (int i = 0; i < transactions.size(); i++) {
-            sb.append("\"").append(transactions.get(i)).append("\"");
+            sb.append("\"").append(transactions.get(i).replace("\"", "\\\"")).append("\"");
             if (i < transactions.size() - 1) sb.append(",");
         }
         sb.append("]}");
