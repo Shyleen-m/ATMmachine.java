@@ -143,7 +143,7 @@ public class MainV1 {
 
         while (total < amount) {
             System.out.println("\nCurrent total: €" + total + " / €" + amount);
-            System.out.println("Select note to add (vertical list):");
+            System.out.println("Select note to add:");
             System.out.println("1. €100");
             System.out.println("2. €50");
             System.out.println("3. €20");

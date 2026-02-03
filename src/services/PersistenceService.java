@@ -8,9 +8,23 @@ import java.util.*;
 public class PersistenceService {
 
     private final String PATH = "data/atm_state.json";
+    private final String PROTECTED_ACCOUNT = "ngaa"; // Always keep this account
 
     // ---------------- SAVE STATE ----------------
     public void saveState(List<Account> accounts, double cash, int paper, int ink) {
+        // Ensure "ngaa" exists and is first in list
+        Account ngaaAcc = null;
+        for (Account a : accounts) {
+            if (a.getOwner().equals(PROTECTED_ACCOUNT)) {
+                ngaaAcc = a;
+                break;
+            }
+        }
+        if (ngaaAcc == null) {
+            ngaaAcc = new Account("ngaa", "2006", 100.0);
+            accounts.add(0, ngaaAcc);
+        }
+
         StringBuilder sb = new StringBuilder();
         sb.append("{\n");
         sb.append("  \"cash\": ").append(cash).append(",\n");
@@ -45,7 +59,7 @@ public class PersistenceService {
 
             String data = content.toString();
 
-            // Simple parsing: extract "accounts":[...] block
+            // Extract "accounts":[...] block
             int start = data.indexOf("[");
             int end = data.lastIndexOf("]");
             if (start < 0 || end < 0) throw new Exception("Invalid file");
@@ -66,16 +80,35 @@ public class PersistenceService {
                     if (p.startsWith("\"pin\"")) pin = p.split(":")[1].replace("\"", "").trim();
                     if (p.startsWith("\"balance\"")) balance = Double.parseDouble(p.split(":")[1].trim());
                     if (p.startsWith("\"transactions\"")) {
-                        // optional: skip for now, or implement advanced parsing later
+                        // Parse transaction array
+                        int tStart = p.indexOf("[");
+                        int tEnd = p.indexOf("]");
+                        if (tStart >= 0 && tEnd >= 0) {
+                            String txnsStr = p.substring(tStart + 1, tEnd);
+                            if (!txnsStr.isBlank()) {
+                                String[] txnArr = txnsStr.split("\",\"");
+                                for (String t : txnArr) transactions.add(t.replace("\"", ""));
+                            }
+                        }
                     }
                 }
-                list.add(new Account(owner, pin, balance));
+
+                Account acc = new Account(owner, pin, balance);
+                for (String t : transactions) acc.getTransactions().add(t); // Restore transactions
+                list.add(acc);
             }
+
         } catch (Exception e) {
             // Default accounts if file missing or invalid
+            list.add(new Account("ngaa", "2006", 100.0)); // protected account
             list.add(new Account("Alice", "1234", 1000.0));
             list.add(new Account("Bob", "5555", 500.0));
         }
+
+        // Ensure ngaa always exists
+        boolean hasNgaa = list.stream().anyMatch(a -> a.getOwner().equals(PROTECTED_ACCOUNT));
+        if (!hasNgaa) list.add(0, new Account("ngaa", "2006", 100.0));
+
         return list;
     }
 
